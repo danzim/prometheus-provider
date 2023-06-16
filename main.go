@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/danzim/prometheus-provider/pkg/prometheus"
+	prometheus "github.com/danzim/prometheus-provider/pkg"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
