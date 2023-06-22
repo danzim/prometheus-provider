@@ -25,11 +25,18 @@ func RequestUsageRatio(ns string) (float64, float64, error) {
 	values = make(map[string]float64)
 	var value float64
 
-	queries := map[string]string{
+	/* queries := map[string]string{
 		"cpuUsage":   "quantile_over_time(0.9, pod:container_cpu_usage:sum[7d])",
 		"memUsage":   "quantile_over_time(0.9, namespace:container_memory_usage_bytes:sum[7d])",
 		"cpuRequest": "namespace_cpu:kube_pod_container_resource_requests:sum",
 		"memRequest": "namespace_memory:kube_pod_container_resource_requests:sum",
+	} */
+
+	queries := map[string]string{
+		"cpuUsage":   utils.AppConfig.Prometheus.Query.CPU.Usage,
+		"memUsage":   utils.AppConfig.Prometheus.Query.Memory.Usage,
+		"cpuRequest": utils.AppConfig.Prometheus.Query.CPU.Request,
+		"memRequest": utils.AppConfig.Prometheus.Query.Memory.Request,
 	}
 
 	for k, v := range queries {
