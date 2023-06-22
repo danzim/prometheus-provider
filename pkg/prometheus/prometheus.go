@@ -6,25 +6,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-logr/logr"
-	"github.com/go-logr/zapr"
-	"go.uber.org/zap"
+	"k8s.io/klog/v2"
 )
-
-var log logr.Logger
 
 const (
 	baseURL  = "https://prometheus-k8s-openshift-monitoring.apps.test-cluster.ocp.dz-co.de"
 	resource = "/api/v1/query"
 )
-
-func initializeLog() {
-	zapLog, err := zap.NewDevelopment()
-	if err != nil {
-		panic(fmt.Sprintf("unable to initialize logger: %v", err))
-	}
-	log = zapr.NewLogger(zapLog)
-}
 
 func RequestUsageRatio(ns string) (float64, float64) {
 
@@ -40,16 +28,14 @@ func RequestUsageRatio(ns string) (float64, float64) {
 	}
 
 	for k, v := range queries {
-		fmt.Println(k)
-		fmt.Println(v)
 		strValue, err := prometheusQuery(v)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("unable to request %s", k))
+			klog.ErrorS(err, fmt.Sprintf("unable to request %s", k))
 		}
 		fmt.Println(strValue)
 		float64Value, err := strconv.ParseFloat(strValue, 64)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("unable to convert string to integer [%s]", k))
+			klog.ErrorS(err, fmt.Sprintf("unable to convert string to integer [%s]", k))
 		}
 		if strings.HasPrefix(k, "cpu") {
 			value = float64Value * 1000

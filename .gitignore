@@ -19,3 +19,9 @@
 
 # Go workspace file
 go.work
+
+# certificate directory
+certs/
+
+# golangci-lint cachce
+.tmp/

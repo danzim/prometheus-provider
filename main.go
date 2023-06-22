@@ -1,132 +1,93 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"flag"
 	"fmt"
-	"io/ioutil"
-	"math"
 	"net/http"
+	"os"
 	"time"
 
-	prometheus "github.com/danzim/prometheus-provider/pkg"
-	"github.com/go-logr/logr"
-	"github.com/go-logr/zapr"
-	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
-	"go.uber.org/zap"
+	"github.com/danzim/prometheus-provider/pkg/handler"
+	"github.com/danzim/prometheus-provider/pkg/utils"
+	"k8s.io/klog/v2"
 )
 
-var log logr.Logger
+var (
+	certDir      string
+	clientCAFile string
+	port         int
+)
 
 const (
 	timeout    = 3 * time.Second
 	apiVersion = "externaldata.gatekeeper.sh/v1alpha1"
+
+	defaultPort = 8080
+
+	certName = "tls.crt"
+	keyName  = "tls.key"
 )
 
-type requestRatio struct {
-	CPU    float64 `json:"cpu"`
-	Memory float64 `json:"memory"`
+func init() {
+	klog.InitFlags(nil)
+	flag.StringVar(&certDir, "cert-dir", "", "path to directory containing TLS certificates")
+	flag.StringVar(&clientCAFile, "client-ca-file", "", "path to client CA certificate")
+	flag.IntVar(&port, "defaultPort", defaultPort, "Port for the server to listen on")
+	flag.Parse()
 }
 
 func main() {
-	zapLog, err := zap.NewDevelopment()
-	if err != nil {
-		panic(fmt.Sprintf("unable to initialize logger: %v", err))
-	}
-	log = zapr.NewLogger(zapLog)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", processTimeout(handler.Handler, timeout))
 
-	log.Info("starting server...")
-	http.HandleFunc("/validate", validate)
-
-	if err = http.ListenAndServe(":8080", nil); err != nil {
-		panic(err)
+	server := &http.Server{
+		Addr:              fmt.Sprintf(":%d", port),
+		Handler:           mux,
+		ReadHeaderTimeout: time.Duration(5) * time.Second,
 	}
 
-}
-
-func validate(w http.ResponseWriter, req *http.Request) {
-
-	// only accept POST requests
-	if req.Method != http.MethodPost {
-		sendResponse(nil, "only POST is allowed", w)
-		return
+	config := &tls.Config{
+		MinVersion: tls.VersionTLS13,
 	}
 
-	// read request body
-	requestBody, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		sendResponse(nil, fmt.Sprintf("unable to read request body: %v", err), w)
-		return
-	}
-
-	//ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	//defer cancel()
-
-	// parse request body
-	var providerRequest externaldata.ProviderRequest
-	err = json.Unmarshal(requestBody, &providerRequest)
-	if err != nil {
-		sendResponse(nil, fmt.Sprintf("unable to unmarshal request body: %v", err), w)
-		return
-	}
-
-	results := make([]externaldata.Item, 0)
-	// iterate over all keys
-	for _, key := range providerRequest.Request.Keys {
-
-		cpuRequestRatio, memRequestRatio := prometheus.RequestUsageRatio(key)
-
-		ratio := requestRatio{
-			CPU:    math.Floor(cpuRequestRatio*100) / 100,
-			Memory: math.Floor(memRequestRatio*100) / 100,
+	if clientCAFile != "" {
+		klog.InfoS("loading CA certificate", "clientCAFile", clientCAFile)
+		caCert, err := os.ReadFile(clientCAFile)
+		if err != nil {
+			klog.ErrorS(err, "unable to load CA certificate", "clientCAFile", clientCAFile)
+			os.Exit(1)
 		}
 
-		fmt.Println(ratio)
+		clientCAs := x509.NewCertPool()
+		clientCAs.AppendCertsFromPEM(caCert)
 
-		results = append(results, externaldata.Item{
-			Key:   key,
-			Value: ratio,
-		})
-
+		config.ClientCAs = clientCAs
+		config.ClientAuth = tls.RequireAndVerifyClientCert
+		server.TLSConfig = config
 	}
-	sendResponse(&results, "", w)
+
 }
 
-// sendResponse sends back the response to Gatekeeper.
-func sendResponse(results *[]externaldata.Item, systemErr string, w http.ResponseWriter) {
-	response := externaldata.ProviderResponse{
-		APIVersion: apiVersion,
-		Kind:       "ProviderResponse",
-	}
+func processTimeout(h http.HandlerFunc, duration time.Duration) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), duration)
+		defer cancel()
 
-	if results != nil {
-		response.Response.Items = *results
-	} else {
-		response.Response.SystemError = systemErr
-	}
+		r = r.WithContext(ctx)
 
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		panic(err)
+		processDone := make(chan bool)
+		go func() {
+			h(w, r)
+			processDone <- true
+		}()
+
+		select {
+		case <-ctx.Done():
+			utils.SendResponse(nil, "operation timed out", w)
+		case <-processDone:
+		}
 	}
 }
-
-// func processTimeout(h http.HandlerFunc, duration time.Duration) http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		ctx, cancel := context.WithTimeout(r.Context(), duration)
-// 		defer cancel()
-
-// 		r = r.WithContext(ctx)
-
-// 		processDone := make(chan bool)
-// 		go func() {
-// 			h(w, r)
-// 			processDone <- true
-// 		}()
-
-// 		select {
-// 		case <-ctx.Done():
-// 			sendResponse(nil, "operation timed out", w)
-// 		case <-processDone:
-// 		}
-// 	}
-// }
