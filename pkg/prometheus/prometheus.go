@@ -1,20 +1,25 @@
 package prometheus
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
+	"github.com/danzim/prometheus-provider/pkg/utils"
 	"k8s.io/klog/v2"
 )
 
-const (
+/* const (
 	baseURL  = "https://prometheus-k8s-openshift-monitoring.apps.test-cluster.ocp.dz-co.de"
 	resource = "/api/v1/query"
-)
+) */
 
-func RequestUsageRatio(ns string) (float64, float64) {
+func RequestUsageRatio(ns string) (float64, float64, error) {
 
 	var values map[string]float64
 	values = make(map[string]float64)
@@ -31,11 +36,13 @@ func RequestUsageRatio(ns string) (float64, float64) {
 		strValue, err := prometheusQuery(v)
 		if err != nil {
 			klog.ErrorS(err, fmt.Sprintf("unable to request %s", k))
+			return 0, 0, err
 		}
 
 		float64Value, err := strconv.ParseFloat(strValue, 64)
 		if err != nil {
 			klog.ErrorS(err, fmt.Sprintf("unable to convert string to integer [%s]", k))
+			return 0, 0, err
 		}
 		if strings.HasPrefix(k, "cpu") {
 			value = float64Value * 1000
@@ -52,48 +59,51 @@ func RequestUsageRatio(ns string) (float64, float64) {
 	cpuRequestRatio := values["cpuUsage"] / values["cpuRequest"] * 100
 	memRequestRatio := values["memUsage"] / values["memRequest"] * 100
 
-	return cpuRequestRatio, memRequestRatio
+	return cpuRequestRatio, memRequestRatio, nil
 
 }
 
 func prometheusQuery(query string) (string, error) {
 
-	// var body PrometheusResponse
+	var body PrometheusResponse
 
-	// params := url.Values{}
+	params := url.Values{}
+	params.Add("query", query)
 
-	// params.Add("query", query)
+	u, err := url.ParseRequestURI(utils.AppConfig.Prometheus.URL)
+	if err != nil {
+		klog.ErrorS(err, "unable to parse prometheus query request URI")
+		return "", err
+	}
+	u.Path = utils.AppConfig.Prometheus.Resource
+	u.RawQuery = params.Encode()
+	urlStr := fmt.Sprintf("%v", u)
 
-	// u, err := url.ParseRequestURI(baseURL)
-	// if err != nil {
-	// 	log.Error(err, "unable to parse prometheus query request URI")
-	// }
-	// u.Path = resource
-	// u.RawQuery = params.Encode()
-	// urlStr := fmt.Sprintf("%v", u)
+	res, err := http.Get(urlStr)
+	if err != nil {
+		klog.ErrorS(err, "unable to query prometheus api")
+		return "", err
+	}
 
-	// res, err := http.Get(urlStr)
-	// if err != nil {
-	// 	log.Error(err, "unable to query prometheus api")
-	// }
+	defer res.Body.Close()
 
-	// defer res.Body.Close()
+	b, err := io.ReadAll(res.Body)
+	if err != nil {
+		klog.ErrorS(err, "unable to read response body")
+		return "", err
+	}
 
-	// b, err := io.ReadAll(res.Body)
-	// if err != nil {
-	// 	log.Error(err, "unable to read response body")
-	// }
+	err = json.Unmarshal(b, &body)
+	if err != nil {
+		klog.ErrorS(err, "unable to unmarshal body")
+		return "", err
+	}
 
-	// err = json.Unmarshal(b, &body)
-	// if err != nil {
-	// 	log.Error(err, "unable to unmarshal body")
-	// }
+	value := fmt.Sprintf("%v", body.Data.Result[0].Value[1])
 
-	// value := fmt.Sprintf("%v", body.Data.Result[0].Value[1])
+	//fmt.Println(res.Status)
 
-	// fmt.Println(res.Status)
-
-	var value string
+	/* var value string
 
 	switch query {
 	case "quantile_over_time(0.9, pod:container_cpu_usage:sum[7d])":
@@ -104,7 +114,7 @@ func prometheusQuery(query string) (string, error) {
 		value = "0.45"
 	case "namespace_memory:kube_pod_container_resource_requests:sum":
 		value = "3221225473"
-	}
+	} */
 
 	return value, nil
 }

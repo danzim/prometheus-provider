@@ -3,6 +3,6 @@ kind: Provider
 metadata:
   name: prometheus-provider
 spec:
-  url: http://prometheus-provider.prometheus-provider:8080/validate
+  url: http://prometheus-provider.prometheus-provider:8080/
   timeout: 30
   #insecureTLSSkipVerify: true

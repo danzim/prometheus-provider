@@ -47,7 +47,11 @@ func Handler(w http.ResponseWriter, req *http.Request) {
 	// iterate over all keys
 	for _, key := range providerRequest.Request.Keys {
 
-		cpuRequestRatio, memRequestRatio := prometheus.RequestUsageRatio(key)
+		cpuRequestRatio, memRequestRatio, err := prometheus.RequestUsageRatio(key)
+		if err != nil {
+			utils.SendResponse(nil, fmt.Sprintf("unable to request ratio: %v", err), w)
+			return
+		}
 
 		ratio := requestRatio{
 			CPU:    math.Floor(cpuRequestRatio*100) / 100,

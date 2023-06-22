@@ -1,0 +1,16 @@
+server:
+  ## true für HTTPS, false für HTTP
+  useHTTPS: false 
+  
+  ## port number
+  port: 8080 
+
+  ## path to SSL/TLS cert file and private key file
+  #certFile: path/to/tls.crt  
+  #keyFile: path/to/tls.key 
+
+  ## path to client CA certificate
+  # clientCAFile: path/to/ 
+prometheus:
+  url: "https://prometheus-k8s-openshift-monitoring.apps.test-cluster.ocp.dz-co.de"
+  resource: "/api/v1/query"

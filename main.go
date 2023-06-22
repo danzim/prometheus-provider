@@ -4,11 +4,9 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/danzim/prometheus-provider/pkg/handler"
@@ -27,15 +25,9 @@ var (
 const (
 	timeout    = 3 * time.Second
 	apiVersion = "externaldata.gatekeeper.sh/v1alpha1"
-
-	defaultPortHTTP  = 8080
-	defaultPortHTTPS = 8443
-
-	certName = "tls.crt"
-	keyName  = "tls.key"
 )
 
-func init() {
+/* func init() {
 	klog.InitFlags(nil)
 	flag.BoolVar(&useHTTPS, "https", false, "Start the server with HTTPS")
 	flag.StringVar(&certDir, "cert-dir", "", "path to directory containing TLS certificates")
@@ -43,44 +35,43 @@ func init() {
 	flag.IntVar(&portHTTP, "defaultPortHTTP", defaultPortHTTP, "Port for the server to listen on")
 	flag.IntVar(&portHTTPS, "defaultPortHTTPS", defaultPortHTTPS, "Port for the server to listen on")
 	flag.Parse()
-}
+} */
 
 func main() {
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", processTimeout(handler.Handler, timeout))
 
-	if useHTTPS {
+	if utils.AppConfig.Server.UseHTTPS {
 		server := &http.Server{
-			Addr:              fmt.Sprintf(":%d", portHTTPS),
+			Addr:              fmt.Sprintf(":%d", utils.AppConfig.Server.Port),
 			Handler:           mux,
 			ReadHeaderTimeout: time.Duration(5) * time.Second,
 		}
 
-		config := &tls.Config{
+		configTLS := &tls.Config{
 			MinVersion: tls.VersionTLS13,
 		}
 
-		if clientCAFile != "" {
-			klog.InfoS("loading CA certificate", "clientCAFile", clientCAFile)
-			caCert, err := os.ReadFile(clientCAFile)
+		if utils.AppConfig.Server.ClientCAFile != "" {
+			klog.InfoS("loading CA certificate", "clientCAFile", utils.AppConfig.Server.ClientCAFile)
+			caCert, err := os.ReadFile(utils.AppConfig.Server.ClientCAFile)
 			if err != nil {
-				klog.ErrorS(err, "unable to load CA certificate", "clientCAFile", clientCAFile)
+				klog.ErrorS(err, "unable to load CA certificate", "clientCAFile", utils.AppConfig.Server.ClientCAFile)
 				os.Exit(1)
 			}
 
 			clientCAs := x509.NewCertPool()
 			clientCAs.AppendCertsFromPEM(caCert)
 
-			config.ClientCAs = clientCAs
-			config.ClientAuth = tls.RequireAndVerifyClientCert
-			server.TLSConfig = config
+			configTLS.ClientCAs = clientCAs
+			configTLS.ClientAuth = tls.RequireAndVerifyClientCert
+			server.TLSConfig = configTLS
 
-			if certDir != "" {
-				certFile := filepath.Join(certDir, certName)
-				keyFile := filepath.Join(certDir, keyName)
+			if utils.AppConfig.Server.KeyFile != "" || utils.AppConfig.Server.CertFile != "" {
 
-				klog.InfoS("starting external data provider server", "port", portHTTPS, "certFile", certFile, "keyFile", keyFile)
-				if err := server.ListenAndServeTLS(certFile, keyFile); err != nil {
+				klog.InfoS("starting external data provider server", "port", utils.AppConfig.Server.Port, "certFile", utils.AppConfig.Server.CertFile, "keyFile", utils.AppConfig.Server.KeyFile)
+				if err := server.ListenAndServeTLS(utils.AppConfig.Server.CertFile, utils.AppConfig.Server.KeyFile); err != nil {
 					klog.ErrorS(err, "unable to start external data provider server")
 					os.Exit(1)
 				}
@@ -91,11 +82,11 @@ func main() {
 		}
 	} else {
 		server := &http.Server{
-			Addr:              fmt.Sprintf(":%d", portHTTP),
+			Addr:              fmt.Sprintf(":%d", utils.AppConfig.Server.Port),
 			Handler:           mux,
 			ReadHeaderTimeout: time.Duration(5) * time.Second,
 		}
-		klog.InfoS("starting external data provider server", "port", portHTTP)
+		klog.InfoS("starting external data provider server", "port", utils.AppConfig.Server.Port)
 		if err := server.ListenAndServe(); err != nil {
 			klog.ErrorS(err, "unable to start external data provider server")
 			os.Exit(1)
