@@ -27,4 +27,4 @@ certs/
 .tmp/
 
 # VSCode 
-.vscode
+.vscode/
