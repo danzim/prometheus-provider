@@ -32,7 +32,7 @@ func RequestUsageRatio(ns string) (float64, float64) {
 		if err != nil {
 			klog.ErrorS(err, fmt.Sprintf("unable to request %s", k))
 		}
-		fmt.Println(strValue)
+
 		float64Value, err := strconv.ParseFloat(strValue, 64)
 		if err != nil {
 			klog.ErrorS(err, fmt.Sprintf("unable to convert string to integer [%s]", k))
@@ -45,21 +45,12 @@ func RequestUsageRatio(ns string) (float64, float64) {
 			err := errors.New("internal error: value 0")
 			panic(err)
 		}
-		fmt.Println(value)
 
 		values[k] = value
 	}
 
-	fmt.Println(values["cpuUsage"])
-	fmt.Println(values["cpuRequest"])
-	fmt.Println(values["memUsage"])
-	fmt.Println(values["memRequest"])
-
 	cpuRequestRatio := values["cpuUsage"] / values["cpuRequest"] * 100
 	memRequestRatio := values["memUsage"] / values["memRequest"] * 100
-
-	fmt.Println(cpuRequestRatio)
-	fmt.Println(memRequestRatio)
 
 	return cpuRequestRatio, memRequestRatio
 

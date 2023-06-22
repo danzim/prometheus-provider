@@ -54,8 +54,6 @@ func Handler(w http.ResponseWriter, req *http.Request) {
 			Memory: math.Floor(memRequestRatio*100) / 100,
 		}
 
-		fmt.Println(ratio)
-
 		results = append(results, externaldata.Item{
 			Key:   key,
 			Value: ratio,
