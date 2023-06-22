@@ -14,3 +14,10 @@ server:
 prometheus:
   url: "https://prometheus-k8s-openshift-monitoring.apps.test-cluster.ocp.dz-co.de"
   resource: "/api/v1/query"
+  query:
+    memory:
+      usage: 'sum(quantile_over_time(0.9, container_memory_usage_bytes{}[7d]))'
+      request: 'namespace_memory:kube_pod_container_resource_requests:sum{}'
+    cpu:
+      usage: 'sum(quantile_over_time(0.9,rate(container_cpu_usage_seconds_total{}[1m]) [7d:5m]))'
+      request: 'namespace_cpu:kube_pod_container_resource_requests:sum{}'

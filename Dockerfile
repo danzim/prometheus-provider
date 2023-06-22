@@ -27,6 +27,7 @@ FROM ${BASEIMAGE}
 WORKDIR /
 
 COPY --from=builder /go/src/github.com/danzim/prometheus-provider/bin/provider .
+COPY --from=builder /go/src/github.com/danzim/prometheus-provider/config.yaml .
 
 USER 65532:65532
 
