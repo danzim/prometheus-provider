@@ -25,3 +25,6 @@ certs/
 
 # golangci-lint cachce
 .tmp/
+
+# VSCode 
+.vscode
