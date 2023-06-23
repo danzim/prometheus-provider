@@ -1,6 +1,6 @@
 server:
   ## true für HTTPS, false für HTTP
-  useHTTPS: false 
+  useHTTPS: true 
   
   ## port number
   port: 8443 
