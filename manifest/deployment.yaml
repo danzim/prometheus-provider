@@ -23,7 +23,7 @@ spec:
         imagePullPolicy: IfNotPresent
         name: prometheus-provider
         ports:
-        - containerPort: 8080
+        - containerPort: 8443
           protocol: TCP
         resources:
           requests:

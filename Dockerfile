@@ -29,6 +29,10 @@ WORKDIR /
 COPY --from=builder /go/src/github.com/danzim/prometheus-provider/bin/provider .
 COPY --from=builder /go/src/github.com/danzim/prometheus-provider/config.yaml .
 
+COPY --from=builder --chown=65532:65532 /go/src/github.com/danzim/prometheus-provider/certs/tls.crt \
+    /go/src/github.com/danzim/prometheus-provider/certs/tls.key \
+    /certs/
+
 USER 65532:65532
 
 ENTRYPOINT ["/provider"]

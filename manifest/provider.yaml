@@ -1,8 +1,8 @@
-apiVersion: externaldata.gatekeeper.sh/v1alpha1
+apiVersion: externaldata.gatekeeper.sh/v1beta1
 kind: Provider
 metadata:
   name: prometheus-provider
 spec:
-  url: http://prometheus-provider.prometheus-provider:8080/
-  timeout: 30
-  #insecureTLSSkipVerify: true
+  url: http://prometheus-provider.prometheus-provider.svc.cluster.local:8080/
+  timeout: 5 
+  caBundle: ""

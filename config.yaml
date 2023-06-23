@@ -3,14 +3,14 @@ server:
   useHTTPS: false 
   
   ## port number
-  port: 8080 
+  port: 8443 
 
   ## path to SSL/TLS cert file and private key file
-  #certFile: path/to/tls.crt  
-  #keyFile: path/to/tls.key 
+  certFile: /certs/tls.crt  
+  keyFile: /certs/tls.key 
 
   ## path to client CA certificate
-  # clientCAFile: path/to/ 
+  clientCAFile: /certs/ca.crt
 prometheus:
   url: "http://prometheus-operated.monitoring.svc.cluster.local:9090"
   resource: "/api/v1/query"
