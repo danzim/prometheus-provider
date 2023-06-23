@@ -19,7 +19,7 @@ spec:
         run: prometheus-provider
     spec:
       containers:
-      - image: danzim/prometheus-provider:latest
+      - image: danzim/prometheus-provider:dev
         imagePullPolicy: IfNotPresent
         name: prometheus-provider
         ports:

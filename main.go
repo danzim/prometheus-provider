@@ -43,6 +43,7 @@ func main() {
 	mux.HandleFunc("/", processTimeout(handler.Handler, timeout))
 
 	if utils.AppConfig.Server.UseHTTPS {
+		klog.InfoS("starting server with HTTPS...")
 		server := &http.Server{
 			Addr:              fmt.Sprintf(":%d", utils.AppConfig.Server.Port),
 			Handler:           mux,

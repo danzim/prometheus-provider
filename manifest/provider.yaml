@@ -3,6 +3,6 @@ kind: Provider
 metadata:
   name: prometheus-provider
 spec:
-  url: http://prometheus-provider.prometheus-provider.svc.cluster.local:8080/
+  url: https://prometheus-provider.prometheus-provider.svc.cluster.local:8443/
   timeout: 5 
   caBundle: ""
