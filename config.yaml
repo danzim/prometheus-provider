@@ -12,7 +12,7 @@ server:
   ## path to client CA certificate
   # clientCAFile: path/to/ 
 prometheus:
-  url: "https://prometheus.dz-co.de"
+  url: "http://prometheus-operated.monitoring.svc.cluster.local:9090"
   resource: "/api/v1/query"
   query:
     memory:

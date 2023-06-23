@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -29,6 +30,7 @@ func init() {
 	if err != nil {
 		klog.ErrorS(err, "unable to load config file")
 	}
+
 }
 
 // sendResponse sends back the response to Gatekeeper.
@@ -67,6 +69,10 @@ func loadConfig(file string) error {
 	if err != nil {
 		return err
 	}
+
+	klog.InfoS("loaded config:")
+	klog.InfoS(fmt.Sprintf("Prometheus URL: %s", AppConfig.Prometheus.URL))
+	klog.InfoS(fmt.Sprintf("Prometheus Resource: %s", AppConfig.Prometheus.Resource))
 
 	return nil
 

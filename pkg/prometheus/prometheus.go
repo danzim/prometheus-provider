@@ -40,6 +40,7 @@ func RequestUsageRatio(ns string) (float64, float64, error) {
 	}
 
 	for k, v := range queries {
+		klog.InfoS(fmt.Sprintf("Query Prometheus: %s", v))
 		strValue, err := prometheusQuery(v)
 		if err != nil {
 			klog.ErrorS(err, fmt.Sprintf("unable to request %s", k))
@@ -99,6 +100,8 @@ func prometheusQuery(query string) (string, error) {
 		klog.ErrorS(err, "unable to read response body")
 		return "", err
 	}
+
+	klog.InfoS(fmt.Sprintf("Prometheus return body: %s", b))
 
 	err = json.Unmarshal(b, &body)
 	if err != nil {
