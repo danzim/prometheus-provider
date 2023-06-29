@@ -5,9 +5,9 @@ metadata:
   namespace: prometheus-provider
 spec:
   ports:
-  - port: 8443
+  - port: 8080
     protocol: TCP
-    targetPort: 8443
+    targetPort: 8080
   selector:
     run: prometheus-provider
   sessionAffinity: None

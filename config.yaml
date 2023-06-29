@@ -1,9 +1,9 @@
 server:
   ## true für HTTPS, false für HTTP
-  useHTTPS: true 
+  useHTTPS: false 
   
   ## port number
-  port: 8443 
+  port: 8080 
 
   ## path to SSL/TLS cert file and private key file
   certFile: /certs/tls.crt  

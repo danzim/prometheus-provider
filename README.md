@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/danzim/prometheus-provider)](https://goreportcard.com/report/github.com/danzim/prometheus-provider)
+
 # prometheus-provider
 Integrate OPA Gatekeeper's ExternalData feature with OpenShift Prometheus to determine if a deployment meets the ratio between resource requests and actual consumption
 
